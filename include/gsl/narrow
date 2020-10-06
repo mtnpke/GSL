@@ -18,12 +18,19 @@
 #define GSL_NARROW_H
 #include <gsl/assert> // for Expects
 #include <gsl/util>   // for narrow_cast
+
+#if defined(_MSC_VER) && (defined(_KERNEL_MODE) || (defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS))
+#define GSL_NO_EXCEPTIONS
+#endif
+
 namespace gsl
 {
+#if !defined(GSL_NO_EXCEPTIONS)
 struct narrowing_error : public std::exception
 {
     const char* what() const noexcept override { return "narrowing_error"; }
 };
+#endif
 
 // narrow() : a checked version of narrow_cast() that throws if the cast changed the value
 template <class T, class U>
@@ -40,7 +47,11 @@ GSL_SUPPRESS(f.6) // NO-FORMAT: attribute // TODO: MSVC /analyze does not recogn
 
     if (static_cast<U>(t) != u || (is_different_signedness && ((t < T{}) != (u < U{}))))
     {
+#if defined(GSL_NO_EXCEPTIONS)
+        gsl::details::terminate();
+#else
         throw narrowing_error{};
+#endif
     }
 
     return t;
