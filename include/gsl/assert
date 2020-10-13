@@ -21,9 +21,11 @@
 // Temporary until MSVC STL supports no-exceptions mode.
 // Currently terminate is a no-op in this mode, so we add termination behavior back
 //
+#if !defined(GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND)
+
 #if defined(_MSC_VER) && (defined(_KERNEL_MODE) || (defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS))
 
-#define GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND
+#define GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND 1
 #include <intrin.h>
 #define RANGE_CHECKS_FAILURE 0
 
@@ -35,10 +37,16 @@
 #else // defined(_MSC_VER) && (defined(_KERNEL_MODE) || (defined(_HAS_EXCEPTIONS) &&
       // !_HAS_EXCEPTIONS))
 
-#include <exception>
+#define GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND 0
 
 #endif // defined(_MSC_VER) && (defined(_KERNEL_MODE) || (defined(_HAS_EXCEPTIONS) &&
        // !_HAS_EXCEPTIONS))
+
+#endif
+
+#if !GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND
+#include <exception>
+#endif // !GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND
 
 //
 // make suppress attributes parse for some compilers
@@ -90,7 +98,7 @@ namespace gsl
 
 namespace details
 {
-#if defined(GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND)
+#if GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND
 
     typedef void(__cdecl* terminate_handler)();
 
@@ -108,15 +116,15 @@ namespace details
         return handler;
     }
 
-#endif // defined(GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND)
+#endif // GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND
 
     [[noreturn]] inline void terminate() noexcept
     {
-#if defined(GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND)
+#if GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND
         (*gsl::details::get_terminate_handler())();
 #else
         std::terminate();
-#endif // defined(GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND)
+#endif // GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND
     }
 
 } // namespace details
